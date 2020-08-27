@@ -1,0 +1,55 @@
+\documentclass[12pt, letterpaper]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{amsmath, amssymb}
+
+
+
+\usepackage[margin=3cm]{geometry}
+
+\title{embeddingCheck}
+
+\begin{document}
+
+
+The function of the file \texttt{embeddingCheck.py} is to verify if, given a presentation complex $X$ and an ordering on its spine vertices, the boundary cycles of the 2-cells of $X$ actually embed in $X^1 \times \mathbb{R}$ or not.
+
+An ordering of the vertices on the spine is a stacking if and only if there is a crossing in none of the lobes of $X^1 \times \mathbb{R}$. It is therefore sufficient to verify if the embedding stands for all lobes in order to conclude to the validity of a stacking.
+
+The method \texttt{embeddingCheck} iterates over all lobes of $X^1 \times \mathbb{R}$ and verifies crossings for a specific lobe using the \texttt{embeddingLobeCheck} helper method, where the main verification takes place.
+
+\section{\texttt{embeddingLobeCheck}}
+
+    The method takes as input a \texttt{stacking} object (a tentative stacking) as well as a generator whose associated lobe must be tested.
+    
+    Using the helper method vertexListHelper, it generates a list of vertices respecting the earlier established order, with each vertex in the list actually being an object of type \texttt{StackingVertex}.
+    
+    These objects cause the \texttt{vertexList} to be augmented with data about which vertices it is connected to through the \texttt{v.neighbors} property. More specifically, it provides a segregation of the neighbors of the vertex into two properties, higher / lower and outgoing / incoming.
+    
+    Higher and lower refer to the position of the neighbor in the ordering of the vertices. If the neighbor comes before, it is said to be lower whereas if it comes after in the ordering, it is higher.
+    
+    Outgoing and incoming refer to the direction of the edge in question. The edge is incoming if it is oriented towards the vertex and outgoing if it is oriented away from it, and the vertex inherits the value of its edge.
+    
+    In order to detect crossings, the algorithm uses a queue of vertices. We traverse the list of vertices \texttt{vertexList} in order, and keep a queue $q$ in order to keep track of which vertices are still \emph{active}, i.e. vertices for which we have seen one end but not the other.
+    
+    An ordering of vertices does not have a crossing on a specific lobe if and only if:
+    
+        \begin{enumerate}
+            \item The lobe does not have any \emph{nested} pairs of edges, i.e. for any pair of edges $a, b$ in the lobe,  if $a$ becomes active before vertex $b$, then $a$ becomes inactive prior to $b$;
+            
+            \item For all pairs $a,b$ of edges, if $a$ and $b$ are both active, then $a,b$ either both point upwards or both point downwards.
+            
+            \item If the lobe contains a disk (cell of boundary length 1), then no other edges can be active when the corresponding vertex is encountered.
+        \end{enumerate}
+        
+    Hence the algorithm starts as such: create a queue $q$ as well as a variable \texttt{q\_direction} that stores the current direction of the queue (upwards or downwards). This direction may only change if $q$ is empty. The idea is that $q$ stores the vertices that are currently active, and vertices get popped from the queue if they are no longer active, thereby eliminating them from consideration.
+    
+    Verify if $q$ is empty. If so, verify if the current vertex $v$ has higher neighbors. Let \texttt{q\_direction} match the direction of any such neighbor; if $v$ has two higher neighbors with inconsistent directions, then property 2 is violated. Add $v$ to $q$ once if there is only one edge being opened, or twice otherwise. If $v$ corresponds to a disk, continue traversing without any changes.
+    
+    If $q$ is not empty and $v$ corresponds to a disk, property 3 is violated. Otherwise, verify if $v$ closes any existing edges: for any lower edge connecting to $v$, check if the other endpoint corresponds to the head of the queue. If so, delete it (pop it) from the queue as $v$ closes that edge. Otherwise, we have a nested pair of edges and property 1 is violated.
+    
+    Finally, add the higher vertices to the queue, verifying if their direction is consistent with the existing orientation in \texttt{q\_direction}, and continue traversing up until all vertices have been visited. If they have all been visited and no inconsistency has been seen, then we can conclude that there is no intersection of boundary paths in the particular lobe under sutdy.
+    
+    
+    
+\end{document}

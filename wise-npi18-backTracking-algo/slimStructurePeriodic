@@ -1,0 +1,519 @@
+import networkx as nx
+import itertools
+import copy
+from cwComplexes import *
+from presComplexBuilder import *
+import math
+from slimClasses import *
+
+def slimCheck(complexx, maxLen=30, minLen=6):
+	preorders=[]
+	#print(complexx.twoCells[1])
+	for cell in complexx.twoCells:
+		#print(cell)
+		nodeGraph=CellNodeGraph(cell)
+		#nodeGraph.niah()
+		cellPreorders=[]
+		for maxEl in nodeGraph.graph.nodes:
+			#CellPreorder(nodeGraph, maxEl).niah()
+			cellPreorders+=[CellPreorder(nodeGraph, maxEl)]
+		#print(cellPreorders[1].graph.edges)
+		preorders+=[cellPreorders]
+		nodeGraph=None
+	allCol=[]
+	#print(preorders)
+	for comb in itertools.product(*preorders):
+		#print(comb)
+		col=ComplexColumn(comb)
+		#col.niah()
+		#print(col.graph.edges)
+		if col.isSlim:
+			allCol+=[col]
+	#print(allCol)
+
+	#print(len(allCol))
+	Graph=SlimGraph(complexx)
+	#Graph.niah()
+	start=0
+	counter=0
+	for i in range(start, len(allCol)):
+		for j in range(maxLen):
+			Graph.glueToEnd(allCol[i],i)
+		if Graph.Slim and not(Graph.cycle):
+			return (True, Graph.graph.edges)
+	return (False, None)
+
+
+
+
+
+
+
+
+
+
+
+
+"""def slimCheck(complexx, n=6):
+	genNum=len(complexx.oneCells)
+	relNum=len(complexx.twoCells)
+	preorders=[]
+	counter=0
+	for cell in complexx.twoCells:
+		preorders+=[genPreorders(cell, complexx)]
+	allCol=genColumn(preorders)
+	for comb in itertools.product(allCol, repeat=n):
+		#print(counter)
+		colNumber=0
+		for col in comb: #col by col
+			if colNumber==0:
+				graph=col.copy()
+			else:
+				#print(condition4(graph, col, colNumber, genNum))
+				if condition4(graph, col, colNumber, genNum):
+					graph=glueToEnd(graph, col, colNumber)
+				#	print(col.edges)
+				#	print(colNumber)
+				#	print(graph.edges)
+				else:
+					break
+
+			try:
+				cycle=nx.find_cycles(graph)
+				#read only if there is a cycle
+			except:
+				if colNumber>4:
+					#"has no cycle, it is slim"
+					return (True, complexx, colNumber,  graph.edges)
+			colNumber+=1
+		counter+=1
+	return (False, complexx, None)
+
+
+
+
+def doCopy(graph):
+	newGraph=nx.DiGraph()
+	for edge in graph.edges:
+		newGraph.add_edge(edge[0], edge[1])
+	return newGraph
+
+def genColumn(preorders):
+	#one preorder per cell
+	allCol=[]
+	#i=0
+	for x in itertools.product(*preorders):
+		col=nx.DiGraph()
+		maxEdges=set()
+		boo=True
+		for preorder in x:
+			for edge in preorder.edges:
+				col.add_edge(edge[0], edge[1]) #CAN ADD TWO TIMES SAME EDGE
+				maxEdge=edge[1]
+			if maxEdge in maxEdges:
+				boo=False
+			maxEdges.add(maxEdge)
+		if boo:
+			allCol+=[col]
+			#print(col.edges, i)
+			#i+=1
+	#print(len(allCol))
+	return allCol
+
+def glueToEnd(graph, col, colNumber): #fin number of columns in graph
+	#print(graph.edges)
+	#print(col.edges)
+	for edge in col.edges:
+		graph.add_edge((edge[0][0], edge[0][1]+colNumber), (edge[1][0], edge[1][1]+colNumber)) #WARNING: col has to always gp forward/positive direction
+	#print(graph.edges)
+	return graph
+
+def condition4(graph, col, colNumber, genNum):
+	lastColEdges=set()
+	#print(graph.edges, colNumber)
+	for graphEdge in graph.edges:
+		if graphEdge[1][1]==colNumber:
+			#print("yaaaa")
+			lastColEdges.add(graphEdge) #_________________________________________________
+	#print(lastColEdges)
+	#print(col.edges)
+	for graphEdge in lastColEdges:
+		#print("niiik")
+		for colEdge in col.edges:
+			#print("yallah")
+			if graphEdge[1]==(colEdge[1][0], colEdge[1][1]+colNumber):
+				#print(False)
+				return False
+	return True
+
+
+
+def genPreorders(cell, complexx):
+	preorders=[]
+	graph=nx.DiGraph()
+	oneCellList=[]
+	for edge in cell.list:
+		oneCellList+=[copy.deepcopy(edge)]
+	#associates a place to the edges:
+	dic={}
+	place=-1 #WARNING: douille
+	direct=oneCellList[0][1]
+
+	for edge in oneCellList: #has to start with positive powers, and never go negative
+			if edge[1]!=direct:
+				direct=not(direct)
+			elif edge[1]:
+				place-=1
+			else:
+				place+=1
+			dic[edge[0]]=place
+	#print(dic)
+	maxIndex=0
+	for maxEdge in cell.list:
+		graph=nx.DiGraph()
+		edgeIndex=0
+		for edge in cell.list:
+			if maxEdge!=edge:
+				graph.add_edge((edge[0], dic[oneCellList[edgeIndex][0]]), (maxEdge[0], dic[oneCellList[maxIndex][0]]))
+			edgeIndex+=1
+		#print(graph.edges)
+		preorders+=[graph]
+		maxIndex+=1
+	return preorders"""
+
+
+"""def slimCheck(complexx, n=10): #this is a breadth first search
+	genNum=len(complexx.oneCells)
+	relNum=len(complexx.twoCells)
+	preorders=[]
+	counter=0
+	for cell in complexx.twoCells:
+		preorders+=[genPreorders(cell, complexx)] #gets all possible preorders for each cell
+	#allComb=list(itertools.product(*preorders))
+	#return BFSallComb(preorders)
+	allCol=genColumn(preorders) # for LOTs a column is a graph with #gen rows and 2 columns, all cell start at row -1/2, i.e 
+	print(len(allCol))
+	dic={}
+	numbOfCol=len(allCol)
+	colNumber=0
+	counter=0
+	failedGraphs=set()
+	#dic[-1]=nx.DiGraph()
+	for col in allCol:
+		dic[counter]=col
+		counter+=1
+	colNumber+=1
+	while colNumber!=n:
+		#print(dic)
+		#print(dic)
+		#print(counter, colNumber)
+		#print(failedGraphs)
+		#print(parent, colNumber)
+		#print(dic[parent].edges)
+		#print(failedGraphs)
+		for i in range(numbOfCol**colNumber):
+			for col in allCol:
+				parent=math.floor((counter-((1-numbOfCol**colNumber)/(1-numbOfCol)-1))/(numbOfCol)+((1-numbOfCol**(colNumber-1))/(1-numbOfCol)-1))
+				#print(parent)
+				#print(counter, colNumber, parent)
+				if not(parent in failedGraphs):
+					graph=dic[parent]
+					#newGraph=doCopy(graph)
+					newGraph=graph.copy()
+					if condition4(newGraph, col, colNumber, genNum):
+						newGraph=glueToEnd(newGraph, col, colNumber)
+						dic[counter]=newGraph
+					else:
+						failedGraphs.add(counter)
+					try:
+						cycle=nx.find_cycles(newGraph)
+						#read only if there is a cycle
+						failedGraphs.add(counter)
+					except:
+						if colNumber>3:
+							"has no cycle"
+							return (True, complexx, colNumber,counter,  newGraph.edges)
+				else:
+					failedGraphs.add(counter)
+				counter+=1
+			#print(counter, failedGraphs)
+		colNumber+=1
+		print(colNumber)
+	return (False, complexx,  n, None)"""
+
+
+
+
+
+
+
+
+"""
+	for comb in allComb:
+		if condition4(comb):
+			graph=createGraph(comb, complexx)
+			try:
+				nx.find_cycle(graph)
+			except:
+				print(graph.edges)
+				return True
+		graph=None
+		counter+=1
+	#print("they all had cycles")
+	return False"""
+
+"""def BFSallComb(graph, preorders, n=5):
+	allComb=list(itertools.product(*preorders))
+	length=len(preorders)
+	if n=1:
+		graph=nx.DiGraph()
+		for j in range(length): #iterates through the cells
+
+
+	for i in range(n):
+		return BFSallComb(graph, preorders, n-1)
+
+def bfs(graph, start):
+    visited, queue = set(), [start]
+    while queue:
+        vertex = queue.pop(0)
+        if vertex not in visited:
+            visited.add(vertex)
+            queue.extend(graph[vertex] - visited)
+    return visited
+
+
+def genAllComb(preorders, n=4): #inputs [[preorders on 2cell1]...[preoders on 2cell i]...]
+	#print(preorders)
+	temp=list(itertools.product(*preorders)) #[(preorder1 for cell1, preorder1 for cell2).....]
+	#print(temp)
+	newTemp=[]
+	for i in range(n):
+		newTemp+=[temp]
+	#print(newTemp)
+	allComb=itertools.product(*newTemp)
+	#print(allComb)
+	return allComb
+
+
+def condition4(comb):
+	for column in comb: #column=[cell1preorders, cell2preorders.....]
+		maxElements=set()
+		for i in range(len(column)): #preorder number
+			maxEl=None
+			for edge in column[i].edges: #useless since always the same but whatever
+				if maxEl!=None and maxEl!=edge[1]:
+					print("NOOOOO")
+				maxEl=edge[1] #WARNING: assumption: they are always the same Other WARNIGN: carefull for (1, -1), we must have that the min is 0 :(
+			if maxEl in maxElements:
+				return False
+			maxElements.add(maxEl)
+	return True
+	#periodic:
+	maxElements=set()
+	for preorder in comb:
+		for edge in preorder.edges:
+			#print(edge)
+			maxEl=edge[1][0] #for LOTs only
+		if maxEl in maxElements:
+			#print("used twice")
+			return False
+		maxElements.add(maxEl)
+	#assuming they are all pointing to one element
+
+	#return True
+
+def genPreorders(cell, complexx):
+	preorders=[]
+	l=len(cell.list)
+	for i in range(l): #the ith edge is the max 
+		g=nx.DiGraph()
+		count=0
+		direct=cell.list[i][1] #true for neg
+		if cell.list[i][1]: #so everything is positive
+			count+=1
+		g.add_node((cell.list[i][0], count))
+		for j in range(l):
+			if 0!=j:
+				if cell.list[(i+j)%l][1]==direct:
+					if direct:
+						count-=1
+					else:
+						count+=1
+				else:
+					direct=not(direct)
+				g.add_edge((cell.list[(j+i)%l][0], count), (cell.list[i][0], 0))
+		print(g.edges)
+		preorders+=[g]
+	#print(len(preorders))
+	return preorders
+
+def createBiColumn(preorders, complexx): #[preorder1 for cell1, preorder2 for cell2....]
+	column=nx.DiGraph()
+	for preorder in preorders:
+		for edge in preorder.edges:
+			column.add_edge(edge)
+	return bicolumn
+
+
+def createGraph(comb , complexx, n=4):
+	graph=nx.DiGraph()
+	for i in range(len(comb)): #through columns
+		for preorder in comb[i]: #through cell-preorder in column
+			for edge in preorder.edges:
+				graph.add_edge((edge[0][0], edge[0][1]+i), (edge[1][0], edge[1][1]+i)) #add at the column
+	return graph
+
+
+
+#Periodic: (replace comb by preorder)
+
+	for e in complexx.oneCells:
+		for i in range(n):
+			graph.add_node((e, i))
+	for preorder in preorders:
+		#print(preorder.edges)
+		for edge in preorder.edges:
+			for i in range(n):
+				graph.add_edge((edge[0][0], edge[0][1]+i), (edge[1][0], edge[1][1]+i))
+	#print(graph.nodes)
+	#print(graph.edges)
+	return graph"""
+
+"""def makeComb(preorders):
+	for i in range(len(preorders)):
+		for x in preorders[i]:"""
+
+
+
+
+"""import networkx as nx
+import itertools
+import copy
+from cwComplexes import *
+from presComplexBuilder import *
+import math
+
+def slimCheckPeriodic(complexx, n=10): #this is a breadth first search
+	genNum=len(complexx.oneCells)
+	relNum=len(complexx.twoCells)
+	preorders=[]
+	counter=0
+	for cell in complexx.twoCells:
+		preorders+=[genPreorders(cell, complexx)] #gets all possible preorders for each cell
+	#allComb=list(itertools.product(*preorders))
+	#return BFSallComb(preorders)
+	allCol=genColumn(preorders) # for LOTs a column is a graph with #gen rows and 2 columns, all cell start at row -1/2, i.e 
+	print(len(allCol))
+	dic={}
+	numbOfCol=len(allCol)
+	colNumber=0
+	counter=0
+	failedGraphs=set()
+	#dic[-1]=nx.DiGraph()
+	for col in allCol:
+		dic[counter]=col
+		counter+=1
+	colNumber+=1
+	for col in allCol:
+		newGraph=col.copy()
+		for i in range(n):
+			if condition4(newGraph, col, colNumber, genNum):
+				newGraph=glueToEnd(newGraph, col, colNumber)
+			try:
+				cycle=nx.find_cycles(newGraph)
+			except:
+				if colNumber>8:
+					"has no cycle"
+					return (True, complexx,counter,  newGraph.edges)
+		counter+=1
+		#print(counter, failedGraphs)
+	return (False, complexx,  n, None)
+
+
+def doCopy(graph):
+	newGraph=nx.DiGraph()
+	for edge in graph.edges:
+		newGraph.add_edge(edge[0], edge[1])
+	return newGraph
+
+def genColumn(preorders):
+	#one preorder per cell
+	allCol=[]
+	for x in itertools.product(*preorders):
+		col=nx.DiGraph()
+		maxEdges=set()
+		boo=True
+		for preorder in x:
+			for edge in preorder.edges:
+				col.add_edge(edge[0], edge[1]) #CAN ADD TWO TIMES SAME EDGE
+				maxEdge=edge[1]
+			if maxEdge in maxEdges:
+				boo=False
+			maxEdges.add(maxEdge)
+		if boo:
+			allCol+=[col]
+	#print(len(allCol))
+	return allCol
+
+def glueToEnd(graph, col, colNumber): #fin number of columns in graph
+	#print(graph.edges)
+	#print(col.edges)
+	for edge in col.edges:
+		graph.add_edge((edge[0][0], edge[0][1]+colNumber), (edge[1][0], edge[1][1]+colNumber)) #WARNING: col has to always gp forward/positive direction
+	#print(graph.edges)
+	return graph
+
+def condition4(graph, col, colNumber, genNum):
+	lastColEdges=set()
+	#print(graph.edges, colNumber)
+	for graphEdge in graph.edges:
+		if graphEdge[1][1]==colNumber:
+			#print("yaaaa")
+			lastColEdges.add(graphEdge) #_________________________________________________
+	#print(lastColEdges)
+	#print(col.edges)
+	for graphEdge in lastColEdges:
+		#print("niiik")
+		for colEdge in col.edges:
+			#print("yallah")
+			if graphEdge[1]==(colEdge[1][0], colEdge[1][1]+colNumber):
+				#print(False)
+				return False
+	return True
+
+
+
+def genPreorders(cell, complexx):
+	preorders=[]
+	graph=nx.DiGraph()
+	oneCellList=[]
+	for edge in cell.list:
+		oneCellList+=[copy.deepcopy(edge)]
+	#associates a place to the edges:
+	dic={}
+	place=-1 #WARNING: douille
+	direct=oneCellList[0][1]
+
+	for edge in oneCellList: #has to start with positive powers, and never go negative
+			if edge[1]!=direct:
+				direct=not(direct)
+			elif edge[1]:
+				place-=1
+			else:
+				place+=1
+			dic[edge[0]]=place
+	#print(dic)
+	maxIndex=0
+	for maxEdge in cell.list:
+		graph=nx.DiGraph()
+		edgeIndex=0
+		for edge in cell.list:
+			if maxEdge!=edge:
+				graph.add_edge((edge[0], dic[oneCellList[edgeIndex][0]]), (maxEdge[0], dic[oneCellList[maxIndex][0]]))
+			edgeIndex+=1
+		#print(graph.edges)
+		preorders+=[graph]
+		maxIndex+=1
+	return preorders
+"""

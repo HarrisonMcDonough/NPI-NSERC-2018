@@ -1,0 +1,237 @@
+import networkx as nx
+import itertools
+import copy
+from cwComplexes import *
+
+class CellNodeGraph:
+	def __init__(self, cell):
+		self.cell=cell
+		self.graph=self.setGraphNodes()
+		#self.preorders=[]
+
+	def niah(self):
+		print(self.cell)
+		print(self.graph.nodes)
+		print(self.graph.edges)
+
+
+	def setGraphNodes(self):
+		graph=nx.DiGraph()
+		oneCellList=[]
+		temp=str(self.cell).split()
+		for i in temp:
+			if len(i)==2:
+				oneCellList+=[(int(i[0]), True)]
+			else:
+				oneCellList+=[(int(i[0]), False)]
+		#print(oneCellList)
+			#associates a place to the edges:
+		#print(self.cell)
+		#print(oneCellList)
+		#dic={}
+		place=-1 #WARNING: douille
+		direct=oneCellList[0][1]
+
+		for edge in oneCellList: #has to start with positive powers, and never go negative
+			if edge[1]!=direct:
+				direct=not(direct)
+			elif edge[1]:
+				place-=1
+			else:
+				place+=1
+			#dic[edge[0]]=place
+			graph.add_node((edge[0], place))
+		self.graph=graph
+		#print(graph.nodes)
+		return graph
+
+"""	def genPreorders(self):
+		preorders=[]
+		#print(self.graph.node)
+		for node in self.graph.nodes:
+			preorder=CellPreorder(self.cell)
+			preorder.setMaxEl(node)
+			preorders+=[preorder]
+		return preorders"""
+
+class CellPreorder():
+	def  __init__(self, cellNodeGraph, maxEl):
+		self.cell=cellNodeGraph.cell
+		self.graph=cellNodeGraph.graph.copy()
+		self.maxEl=self.setMaxEl(maxEl)
+
+	def setMaxEl(self, maxEl):
+		#print(maxEl)
+		for node in self.graph.nodes:
+			if node!=maxEl:
+				self.graph.add_edge(node, maxEl)
+		#self.graph=graph?????
+		return maxEl
+
+	def niah(self):
+		print(self.cell)
+		print(self.graph.nodes)
+		print(self.graph.edges)
+		print(self.maxEl)
+
+
+	"""def setGraphNodes(self):
+		graph=nx.DiGraph()
+		oneCellList=[]
+		temp=str(self.cell).split()
+		for i in temp:
+			if len(i)==2:
+				oneCellList+=[(i[0], True)]
+			else:
+				oneCellList+=[(i[0], False)]
+		#print(oneCellList)
+			#associates a place to the edges:
+		#print(self.cell)
+		#print(oneCellList)
+		#dic={}
+		place=-1 #WARNING: douille
+		direct=oneCellList[0][1]
+
+		for edge in oneCellList: #has to start with positive powers, and never go negative
+			if edge[1]!=direct:
+				direct=not(direct)
+			elif edge[1]:
+				place-=1
+			else:
+				place+=1
+			#dic[edge[0]]=place
+			graph.add_node((edge[0], place))
+		self.graph=graph
+		print(graph.nodes)
+		return graph
+"""
+
+class ComplexColumn:
+	def __init__(self, ls):
+		self.graph=None
+		self.preorders=ls
+		#print(len(ls))
+		self.isSlim=True
+		if self.condition4():
+			#print("yabro")
+			self.combinePreorders()
+		else:
+			#print("nabro")
+			graph=nx.DiGraph()
+			self.isSlim=False
+
+	def niah(self):
+		print(self.isSlim)
+		if self.isSlim:
+			print(self.graph.nodes)
+			print(self.graph.edges)
+		else:
+			print(None)
+			print(None)
+
+	def condition4(self):
+		maxElements=set()
+		#print(len(self.preorders))
+		for i in range(len(self.preorders)):
+			#print(maxElements)
+			preorder=self.preorders[i]
+			#print(preorder.maxEl)
+			if preorder.maxEl in maxElements:
+				return False
+			maxElements.add(preorder.maxEl)
+		return True
+
+	def combinePreorders(self):
+		self.graph=nx.DiGraph()
+		for i in range(len(self.preorders)):
+			#print(i)
+			preorder=self.preorders[i]
+			for edge in preorder.graph.edges:
+				self.graph.add_edge(edge[0], edge[1])
+
+
+
+class SlimGraph:
+	def __init__(self, complexx):
+		self.length=0
+		self.graph=None
+		self.isSlim=True
+		self.cycle=False
+		self.combOfCol=[]
+		self.columns=[]
+
+	def niah(self):
+		print(self.length)
+		print(self.combOfCol)
+		print(self.isSlim)
+		print(self.cycle)
+		if self.length!=0:
+			print(self.graph.nodes)
+			print(self.graph.edges)
+		else:
+			print(None)
+			print(None)
+
+
+
+	def glueToEnd(self, col, i):
+		#print("glueing")
+		if self.length==0:
+			#print("whyyyy")
+			self.graph=col.graph.copy()
+			self.length=1
+			self.columns+=[col]
+			self.cycle=False
+			self.isSlim=True
+			self.combOfCol+=[i]
+		elif self.condition4(col):
+			#print("cond4 holds")
+			for edge in col.graph.edges:
+				self.graph.add_edge((edge[0][0], edge[0][1]+self.length), (edge[1][0], edge[1][1]+self.length))
+			self.columns+=[col]
+			self.length+=1
+			self.combOfCol+=[i]
+			try:
+				nx.find_cycle(self.graph)
+				#read only if no error aka there is a loop
+				self.cycle=True
+			except:
+				#all good
+				self.cycle=False
+				#self.length+=1
+				#self.columns+=[col]
+					#ya
+		else:
+			self.isSlim=False
+			self.columns+=[col]
+			self.combOfCol+=[i]
+			self.length+=1
+
+	def condition4(self, col):
+		#print("check cond4")
+		prevCol=self.columns[self.length-1]
+		for graphEdge in prevCol.graph.edges:
+			for colEdge in col.graph.edges:
+				if graphEdge[1]==(colEdge[1][0], colEdge[1][1]+1):
+					return False
+		return True
+
+
+	def deleteEndCycle(self):
+		#print("waza")
+		col=self.columns.pop()
+		self.length-=1
+		for edge in col.graph.edges:
+			self.graph.remove_edge((edge[0][0], edge[0][1]+self.length), (edge[1][0], edge[1][1]+self.length))
+		self.cycle=False
+		return self.combOfCol.pop()
+
+	def deleteEndSlim(self):
+		self.columns.pop()
+		self.length-=1
+		self.isSlim=True
+		return self.combOfCol.pop()
+
+
+
+
